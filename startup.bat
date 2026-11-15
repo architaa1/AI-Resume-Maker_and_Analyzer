@@ -12,9 +12,6 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM Run the chromedriver setup script silently
-python setup_chromedriver.py >nul 2>nul
-
 REM Start the application
 echo Starting application...
 streamlit run app.py

@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+__pycache__
+*.py[cod]
+*.db
+*.sqlite3
+.env
+.streamlit/secrets.toml
+uploads
+poppler
+poppler.zip

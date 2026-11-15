@@ -2,6 +2,7 @@
 import os
 import sys
 import platform
+import shutil
 import tempfile
 import subprocess
 import streamlit as st
@@ -140,6 +141,17 @@ def setup_webdriver():
     options.add_argument('--window-size=1920,1080')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+
+    system = platform.system()
+    if system == "Linux":
+        chrome_binary = os.environ.get("CHROME_BIN")
+        if not chrome_binary:
+            for binary in ("chromium", "chromium-browser", "google-chrome"):
+                chrome_binary = shutil.which(binary)
+                if chrome_binary:
+                    break
+        if chrome_binary:
+            options.binary_location = chrome_binary
     
     # Method 1: Try direct initialization first since it's working
     try:
@@ -152,6 +164,8 @@ def setup_webdriver():
     
     # Method 2: Check if we already have a chromedriver installed
     chromedriver_path = get_chromedriver_path()
+    if not chromedriver_path and system == "Linux":
+        chromedriver_path = shutil.which("chromedriver")
     if chromedriver_path:
         try:
             service = Service(executable_path=chromedriver_path)
@@ -172,7 +186,6 @@ def setup_webdriver():
             pass
     
     # Method 4: Try platform-specific approaches
-    system = platform.system()
     if system == "Windows":
         try:
             # Try with Chrome binary path

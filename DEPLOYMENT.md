@@ -20,7 +20,7 @@ This guide provides instructions for deploying the Smart AI Resume Analyzer appl
    python run_app.py
    ```
    
-   This script will automatically set up chromedriver and start the application.
+   Selenium manages a compatible ChromeDriver when the browser is used.
 
    Alternatively, you can run the batch file:
    ```
@@ -33,16 +33,12 @@ This guide provides instructions for deploying the Smart AI Resume Analyzer appl
    ```
    pip install -r requirements.txt
    ```
-3. Run the setup script to install the correct chromedriver:
-   ```
-   python setup_chromedriver.py
-   ```
-4. Run the application:
+3. Run the application:
    ```
    streamlit run app.py
    ```
 
-   Alternatively, you can use the startup script which handles both chromedriver setup and application startup:
+   Alternatively, use the startup script after installing Chrome/Chromium and the required system packages:
    ```
    chmod +x startup.sh
    ./startup.sh
@@ -65,6 +61,9 @@ rm google-chrome-stable_current_amd64.deb
 
 # Verify installation
 google-chrome --version
+
+# Install OCR and PDF utilities
+sudo apt install -y tesseract-ocr poppler-utils
 ```
 
 ### Installing Chrome on CentOS/RHEL
@@ -94,10 +93,9 @@ After installing Chrome, deploy the application:
    ```
    pip install -r requirements.txt
    ```
-3. Make the startup script executable and run it:
+3. Run the application (or use `startup.sh` after installing Chromium):
    ```
-   chmod +x startup.sh
-   ./startup.sh
+   streamlit run app.py
    ```
 
 ## Windows Server Deployment
@@ -118,82 +116,24 @@ After installing Chrome, deploy the application:
    python run_app.py
    ```
    
-   This script will automatically set up chromedriver and start the application.
+   Selenium manages a compatible ChromeDriver when the browser is used.
 
 ## Streamlit Cloud Deployment
 
-When deploying to Streamlit Cloud, you need to ensure Chrome is available. Our application includes multiple fallback mechanisms to handle this.
+The app uses Chromium for job-search scraping and system OCR/PDF tools for resume processing.
 
 ### Steps for Streamlit Cloud
 1. Push your code to a GitHub repository
-2. Create a new app in Streamlit Cloud pointing to your repository
-3. Make sure your `requirements.txt` includes all necessary dependencies:
-   - `selenium>=4.10.0`
-   - `webdriver-manager>=4.0.0`
-   - `chromedriver-autoinstaller>=0.6.2`
-4. Ensure the `packages.txt` file is in your repository with:
-   ```
-   chromium
-   chromium-driver
-   libglib2.0-0
-   libnss3
-   libgconf-2-4
-   libfontconfig1
-   xvfb
-   wget
-   unzip
-   ```
-
-### Troubleshooting Streamlit Cloud
-If you encounter issues with Chrome on Streamlit Cloud:
-
-1. Check the logs for specific error messages
-2. Try adding a custom command to run the setup script before the app starts:
-   - In the Streamlit Cloud settings, add a "Main file path" of `run_app.py` instead of `app.py`
+2. Create a new app in Streamlit Community Cloud and set the main file to `app.py`.
+3. Keep `requirements.txt` and `packages.txt` at the repository root. `packages.txt` installs Chromium, Tesseract, and Poppler.
 
 ## Docker Deployment
 
-For Docker deployment, you need to include Chrome in your Docker image.
+The repository's `Dockerfile` installs Chromium, its matching driver, Tesseract, and Poppler.
 
-### Sample Dockerfile
-```dockerfile
-FROM python:3.9-slim
-
-# Install Chrome
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    unzip \
-    xvfb \
-    libglib2.0-0 \
-    libnss3 \
-    libgconf-2-4 \
-    libfontconfig1 \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set up working directory
-WORKDIR /app
-
-# Copy requirements and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
-
-# Make scripts executable
-RUN chmod +x startup.sh setup_chromedriver.py
-
-# Expose port for Streamlit
-EXPOSE 8501
-
-# Run the startup script
-CMD ["python", "run_app.py"]
+```bash
+docker build -t resume-analyzer .
+docker run --rm -p 8501:8501 resume-analyzer
 ```
 
 ## Troubleshooting Common Issues
@@ -205,15 +145,10 @@ This usually indicates that Chrome cannot be started. Ensure:
 - You're using the `--no-sandbox` option in headless environments
 
 ### Error: "Chrome version must be between X and Y"
-This indicates a version mismatch between Chrome and chromedriver:
-- Run the `setup_chromedriver.py` script to install the matching chromedriver version
-- The script automatically detects your Chrome version and downloads the compatible chromedriver
+Selenium Manager selects a compatible ChromeDriver automatically. Make sure the installed Selenium package is current and that the browser is available on `PATH` or configured with `CHROME_BIN`.
 
 ### Error: "Permission denied" when installing chromedriver
-This is a permission issue:
-- Try running the application with administrator privileges
-- Ensure the user has write permissions to the installation directory
-- Use the `setup_chromedriver.py` script which installs chromedriver in the user's home directory
+Ensure the browser and driver are installed in locations accessible to the application user. In Docker and Streamlit Cloud, use the repository's system package configuration rather than downloading a driver at startup.
 
 ### Error: "unknown error: DevToolsActivePort file doesn't exist"
 This is common in containerized environments:
@@ -224,7 +159,7 @@ This is common in containerized environments:
 If you encounter issues on Windows:
 - Make sure Chrome is installed in the standard location
 - Try running the application as administrator
-- Use the `run_app.py` script which handles setup automatically
+- Use `run_app.py` or `startup.bat` to start the application
 - Check Windows Defender or antivirus software that might be blocking chromedriver
 
 ## Additional Resources
